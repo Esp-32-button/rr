@@ -1,29 +1,47 @@
-const express = require('express');
-const bodyParser = require('body-parser');
+const express = require("express");
+const bodyParser = require("body-parser");
+const cors = require("cors");
+
 const app = express();
+const PORT = 3000;
 
 // Middleware
 app.use(bodyParser.json());
+app.use(cors());
 
-// Handle POST request to control the servo motor
-app.post('/control-servo', (req, res) => {
-    const { angle } = req.body;
+// Initial servo state
+let servoState = {
+  angle: 90, // Default angle
+};
 
-    if (angle === undefined) {
-        return res.status(400).send('Angle is required.');
-    }
+// Serve the website's static files
+app.use(express.static("public"));
 
-    console.log(`Received angle: ${angle}`);
+// Endpoint to get the current servo angle (for ESP32)
+app.get("/servo", (req, res) => {
+  res.json(servoState);
+  console.log("Sent current servo angle to ESP32:", servoState);
+});
 
-    // Simulate sending the angle to the ESP32
-    // In a real scenario, you would send this via HTTP, WebSocket, or MQTT
-    console.log(`Sending angle ${angle} to ESP32...`);
+// Endpoint to update the servo angle (from website)
+app.post("/servo", (req, res) => {
+  const { angle } = req.body;
 
-    res.status(200).send('Angle command sent to ESP32.');
+  // Validate the angle
+  if (angle >= 0 && angle <= 180) {
+    servoState.angle = angle; // Update the servo angle
+    res.json({ success: true, message: `Servo angle updated to ${angle}` });
+    console.log(`Servo angle updated to: ${angle}`);
+  } else {
+    res.status(400).json({
+      success: false,
+      message: "Invalid angle. Must be between 0 and 180.",
+    });
+    console.error("Invalid angle received:", angle);
+  }
 });
 
 // Start the server
-const PORT = 3000;
 app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
+  console.log(`Server is running on http://localhost:${PORT}`);
 });
