@@ -11,7 +11,7 @@ app.use(cors());
 
 // Initial servo state
 let servoState = {
-  angle: 90, // Default angle
+  angle: 120, // Default angle
 };
 
 // Serve the website's static files
